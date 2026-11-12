@@ -16,7 +16,7 @@ import { loadEnv } from "vite";
 // locally, while letting shell variables and standard .env files override it.
 const bundledEnv = new URL("./env", import.meta.url);
 const defaults = existsSync(bundledEnv) ? parseEnv(readFileSync(bundledEnv, "utf8")) : {};
-const localEnv = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
+const localEnv = loadEnv(process.env["NODE_ENV"] ?? "development", process.cwd(), "");
 for (const [key, value] of Object.entries({ ...defaults, ...localEnv })) {
   if (key.startsWith("SUPABASE_") || key.startsWith("VITE_SUPABASE_")) {
     process.env[key] ??= value;
@@ -25,9 +25,8 @@ for (const [key, value] of Object.entries({ ...defaults, ...localEnv })) {
 
 export default defineConfig({
   tanstackStart: {
-    vite: {
-    define: { "import.meta.env.VITE_YWBA_CLIENT_RENDER": JSON.stringify(process.env.VERCEL === "1") },
-  },
+    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+    // nitro/vite builds from this
     server: { entry: "server" },
   },
 });
