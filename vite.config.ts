@@ -25,8 +25,9 @@ for (const [key, value] of Object.entries({ ...defaults, ...localEnv })) {
 
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
+    vite: {
+    define: { "import.meta.env.VITE_YWBA_CLIENT_RENDER": JSON.stringify(process.env.VERCEL === "1") },
+  },
     server: { entry: "server" },
   },
 });
