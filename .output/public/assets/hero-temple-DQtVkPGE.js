@@ -1,1 +1,0 @@
-var e=`/assets/hero-temple-cTVAbqxl.jpg`;export{e as t};

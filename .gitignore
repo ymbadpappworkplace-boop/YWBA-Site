@@ -14,6 +14,15 @@
 
 # production
 /build
+/dist
+/.output
+/.vinxi
+/.tanstack
+/.nitro
+
+# Wrangler / Cloudflare
+/.wrangler
+/.dev.vars
 
 # misc
 .DS_Store
@@ -34,3 +43,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editors
+/.vscode/*
+!/.vscode/extensions.json
+/.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
