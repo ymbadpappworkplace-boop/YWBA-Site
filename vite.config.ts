@@ -16,7 +16,7 @@ import { loadEnv } from "vite";
 // locally, while letting shell variables and standard .env files override it.
 const bundledEnv = new URL("./env", import.meta.url);
 const defaults = existsSync(bundledEnv) ? parseEnv(readFileSync(bundledEnv, "utf8")) : {};
-const localEnv = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
+const localEnv = loadEnv(process.env["NODE_ENV"] ?? "development", process.cwd(), "");
 for (const [key, value] of Object.entries({ ...defaults, ...localEnv })) {
   if (key.startsWith("SUPABASE_") || key.startsWith("VITE_SUPABASE_")) {
     process.env[key] ??= value;
