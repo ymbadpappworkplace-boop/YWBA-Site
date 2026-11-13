@@ -5,7 +5,7 @@ import { y as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as useSuspenseQuery } from "../_libs/tanstack__react-query.mjs";
 import { o as thoughtsQuery } from "./queries-CfWi0d_Q.mjs";
 import { t as THOUGHT_CATEGORIES } from "./format-DM6Xt5HZ.mjs";
-import { c as PenLine } from "../_libs/lucide-react.mjs";
+import { l as PenLine } from "../_libs/lucide-react.mjs";
 import { n as PageIntro, r as Pager, t as EmptyState } from "./common-FJ6yPft2.mjs";
 import { t as Route } from "./voices-DDzIx6Tz.mjs";
 import { t as ThoughtCard } from "./thought-card-BpnvV_-n.mjs";

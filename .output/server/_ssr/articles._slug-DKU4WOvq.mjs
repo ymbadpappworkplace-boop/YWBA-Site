@@ -7,7 +7,7 @@ import { a as readingTime, i as initials, r as formatDate } from "./format-DM6Xt
 import { n as AvatarFallback, r as AvatarImage, t as Avatar } from "./avatar-gunzrkKA.mjs";
 import { t as Route } from "./articles._slug-BIDiCakA.mjs";
 import { t as ArticleCard } from "./article-card-Z6yKtGIf.mjs";
-import { w as ArrowLeft } from "../_libs/lucide-react.mjs";
+import { k as ArrowLeft } from "../_libs/lucide-react.mjs";
 import { i as SectionHeading } from "./common-FJ6yPft2.mjs";
 import { t as Markdown$1 } from "../_libs/react-markdown+[...].mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/articles._slug-DKU4WOvq.js

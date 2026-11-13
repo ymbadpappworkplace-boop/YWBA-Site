@@ -102,18 +102,11 @@ export function SiteHeader() {
               </DropdownMenu>
             </>
           ) : (
-            <>
-              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-                <Link to="/auth" search={{ mode: "signin" }}>
-                  Sign in
-                </Link>
-              </Button>
-              <Button asChild size="sm" className="hidden sm:inline-flex">
-                <Link to="/auth" search={{ mode: "register" }}>
-                  Become a member
-                </Link>
-              </Button>
-            </>
+            <Button asChild size="sm" className="hidden sm:inline-flex">
+              <Link to="/auth" search={{ mode: "register" }}>
+                Become a member
+              </Link>
+            </Button>
           )}
 
           <Sheet open={open} onOpenChange={setOpen}>
@@ -144,18 +137,11 @@ export function SiteHeader() {
                       <Link to="/dashboard">Go to dashboard</Link>
                     </Button>
                   ) : (
-                    <>
-                      <Button asChild onClick={() => setOpen(false)}>
-                        <Link to="/auth" search={{ mode: "register" }}>
-                          Become a member
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" onClick={() => setOpen(false)}>
-                        <Link to="/auth" search={{ mode: "signin" }}>
-                          Sign in
-                        </Link>
-                      </Button>
-                    </>
+                    <Button asChild onClick={() => setOpen(false)}>
+                      <Link to="/auth" search={{ mode: "register" }}>
+                        Become a member
+                      </Link>
+                    </Button>
                   )}
                 </div>
               </nav>

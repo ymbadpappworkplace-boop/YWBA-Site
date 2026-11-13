@@ -1,11 +1,12 @@
 import { r as __toESM } from "../../_runtime.mjs";
 import { l as require_react_dom, u as require_react } from "../@floating-ui/react-dom+[...].mjs";
 import { c as createContextScope, d as useComposedRefs, f as require_jsx_runtime, i as Primitive, o as useCallbackRef, s as useLayoutEffect2, u as createSlot } from "./react-avatar+[...].mjs";
-import { b as DismissableLayer, d as useControllableState, f as Presence, h as FocusScope, l as ReactRemoveScroll, m as useId, p as Portal, u as hideOthers, y as useFocusGuards } from "./react-dialog+[...].mjs";
+import { _ as useFocusGuards, d as Portal, f as useId, l as ReactRemoveScroll, p as FocusScope, u as hideOthers, v as DismissableLayer } from "./react-dialog+[...].mjs";
 import { t as clamp } from "../radix-ui__number.mjs";
 import { t as composeEventHandlers } from "../radix-ui__primitive.mjs";
 import { t as createCollection } from "../radix-ui__react-collection.mjs";
 import { t as useDirection } from "../radix-ui__react-direction.mjs";
+import { i as Presence, r as useControllableState } from "./react-checkbox+[...].mjs";
 import { g as createPopperScope, h as PopperContent, m as PopperAnchor, p as Popper } from "./react-dropdown-menu+[...].mjs";
 //#region node_modules/@radix-ui/react-visually-hidden/dist/index.mjs
 var import_react_dom = /* @__PURE__ */ __toESM(require_react_dom(), 1);

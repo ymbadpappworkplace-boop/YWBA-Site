@@ -2,7 +2,7 @@ import { t as cn } from "./utils-C_uf36nf.mjs";
 import { f as require_jsx_runtime } from "../_libs/@radix-ui/react-avatar+[...].mjs";
 import { y as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as LotusMark } from "./logo-DBWTjrHb.mjs";
-import { b as ChevronLeft, y as ChevronRight } from "../_libs/lucide-react.mjs";
+import { T as ChevronLeft, w as ChevronRight } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/common-FJ6yPft2.js
 var import_jsx_runtime = require_jsx_runtime();
 function SectionHeading({ eyebrow, title, action, className }) {

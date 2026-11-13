@@ -1,1 +1,0 @@
-import{c as e,l as t,s as n}from"./queries-Cz40UW9U.js";function r(r,i){return n({...r,enabled:!0,suspense:!0,throwOnError:e,placeholderData:void 0},t,i)}export{r as t};

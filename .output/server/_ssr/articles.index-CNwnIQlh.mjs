@@ -1,7 +1,7 @@
 import { _ as createFileRoute, g as lazyRouteComponent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { r as articlesQuery } from "./queries-CfWi0d_Q.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/articles.index-DFESOk40.js
-var $$splitComponentImporter = () => import("./articles.index-PS4jMp_h.mjs");
+//#region node_modules/.nitro/vite/services/ssr/assets/articles.index-CNwnIQlh.js
+var $$splitComponentImporter = () => import("./articles.index-CeCWjmq4.mjs");
 var Route = createFileRoute("/articles/")({
 	validateSearch: (search) => {
 		const str = (v, max) => typeof v === "string" && v.trim() ? v.trim().slice(0, max) : void 0;

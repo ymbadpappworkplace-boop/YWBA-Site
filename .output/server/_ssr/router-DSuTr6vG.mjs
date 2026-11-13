@@ -4,8 +4,8 @@ import { t as cn } from "./utils-C_uf36nf.mjs";
 import { u as require_react } from "../_libs/@floating-ui/react-dom+[...].mjs";
 import { f as require_jsx_runtime } from "../_libs/@radix-ui/react-avatar+[...].mjs";
 import { t as Button } from "./button-oFxiYaZx.mjs";
-import { _ as createFileRoute, b as useNavigate, d as Scripts, f as HeadContent, g as lazyRouteComponent, h as Outlet, m as createRouter, v as createRootRouteWithContext, x as useRouter, y as Link } from "../_libs/@tanstack/react-router+[...].mjs";
-import { a as useQueryClient, i as QueryClientProvider, r as useQuery } from "../_libs/tanstack__react-query.mjs";
+import { _ as createFileRoute, d as Scripts, f as HeadContent, g as lazyRouteComponent, h as Outlet, m as createRouter, v as createRootRouteWithContext, x as useRouter, y as Link } from "../_libs/@tanstack/react-router+[...].mjs";
+import { i as QueryClientProvider, r as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { t as QueryClient } from "../_libs/tanstack__query-core.mjs";
 import { a as homeQuery, i as contactQuery, t as aboutQuery } from "./queries-CfWi0d_Q.mjs";
 import { a as DialogOverlay, c as DialogTrigger, i as DialogDescription, n as DialogClose, o as DialogPortal, r as DialogContent, s as DialogTitle, t as Dialog } from "../_libs/@radix-ui/react-dialog+[...].mjs";
@@ -13,16 +13,16 @@ import { i as initials, n as createPublicClient } from "./format-DM6Xt5HZ.mjs";
 import { n as AvatarFallback, r as AvatarImage, t as Avatar } from "./avatar-gunzrkKA.mjs";
 import { t as Route$4 } from "./articles._slug-BIDiCakA.mjs";
 import { t as Logo } from "./logo-DBWTjrHb.mjs";
-import { S as Check, _ as Circle, d as MapPin, f as Mail, g as Facebook, h as Instagram, i as ShieldCheck, l as Menu, m as LayoutDashboard, n as X, p as LogOut, r as UserRound, s as Phone, t as Youtube, y as ChevronRight } from "../_libs/lucide-react.mjs";
-import { t as Route$5 } from "./articles.index-DFESOk40.mjs";
+import { D as Check, S as Circle, _ as LayoutDashboard, a as ShieldCheck, c as Phone, f as MapPin, i as UserRound, m as LogOut, n as X, p as Mail, t as Youtube, u as Menu, v as Instagram, w as ChevronRight, y as Facebook } from "../_libs/lucide-react.mjs";
+import { t as Route$5 } from "./articles.index-CNwnIQlh.mjs";
 import { a as DropdownMenuItemIndicator, c as DropdownMenuRadioItem$1, d as DropdownMenuSubTrigger$1, f as DropdownMenuTrigger$1, i as DropdownMenuItem$1, l as DropdownMenuSeparator$1, n as DropdownMenuCheckboxItem$1, o as DropdownMenuLabel$1, r as DropdownMenuContent$1, s as DropdownMenuPortal, t as DropdownMenu$1, u as DropdownMenuSubContent$1 } from "../_libs/@radix-ui/react-dropdown-menu+[...].mjs";
-import { t as supabase } from "./client-BFwA20uY.mjs";
-import { t as Route$6 } from "./voices-DDzIx6Tz.mjs";
+import { i as useSignOut, n as Route$6, r as useAuth, t as AuthProvider } from "./auth-Lkcf4ZLD.mjs";
 import { t as Toaster } from "../_libs/sonner.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-pN_pjqwk.js
+import { t as Route$7 } from "./voices-DDzIx6Tz.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/router-DSuTr6vG.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var styles_default = "/assets/styles-BFzTSVfE.css";
+var styles_default = "/assets/styles-BAVI5XIb.css";
 function reportLovableError(error, context = {}) {
 	if (typeof window === "undefined") return;
 	window.__lovableEvents?.captureException?.(error, {
@@ -53,89 +53,6 @@ function describeThrown(error) {
 	} catch {
 		return String(error);
 	}
-}
-var AuthContext = (0, import_react.createContext)(null);
-function AuthProvider({ children }) {
-	const router = useRouter();
-	const queryClient = useQueryClient();
-	const [session, setSession] = (0, import_react.useState)(null);
-	const [loading, setLoading] = (0, import_react.useState)(true);
-	(0, import_react.useEffect)(() => {
-		const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
-			setSession(next);
-			setLoading(false);
-			if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-			router.invalidate();
-			if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-		});
-		supabase.auth.getSession().then(({ data }) => {
-			setSession(data.session);
-			setLoading(false);
-		});
-		return () => sub.subscription.unsubscribe();
-	}, [router, queryClient]);
-	const userId = session?.user.id;
-	const profileQuery = useQuery({
-		queryKey: [
-			"me",
-			"profile",
-			userId
-		],
-		enabled: !!userId,
-		queryFn: async () => {
-			const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-			if (error) throw error;
-			return data;
-		}
-	});
-	const rolesQuery = useQuery({
-		queryKey: [
-			"me",
-			"roles",
-			userId
-		],
-		enabled: !!userId,
-		queryFn: async () => {
-			const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-			if (error) throw error;
-			return (data ?? []).map((r) => r.role);
-		}
-	});
-	const value = {
-		session,
-		user: session?.user ?? null,
-		loading,
-		profile: profileQuery.data ?? null,
-		profileLoading: !!userId && profileQuery.isLoading,
-		isAdmin: (rolesQuery.data ?? []).includes("admin"),
-		refreshProfile: () => profileQuery.refetch(),
-		signOut: async () => {
-			await queryClient.cancelQueries();
-			queryClient.clear();
-			await supabase.auth.signOut();
-		}
-	};
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AuthContext.Provider, {
-		value,
-		children
-	});
-}
-function useAuth() {
-	const ctx = (0, import_react.useContext)(AuthContext);
-	if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
-	return ctx;
-}
-/** Sign out and leave protected pages without keeping them in history. */
-function useSignOut() {
-	const { signOut } = useAuth();
-	const navigate = useNavigate();
-	return async () => {
-		await signOut();
-		navigate({
-			to: "/",
-			replace: true
-		});
-	};
 }
 var DropdownMenu = DropdownMenu$1;
 var DropdownMenuTrigger = DropdownMenuTrigger$1;
@@ -852,7 +769,12 @@ var AboutRoute = Route$1.update({
 	path: "/about",
 	getParentRoute: () => Route$3
 });
-var VoicesRoute = Route$6.update({
+var AuthRoute = Route$6.update({
+	id: "/auth",
+	path: "/auth",
+	getParentRoute: () => Route$3
+});
+var VoicesRoute = Route$7.update({
 	id: "/voices",
 	path: "/voices",
 	getParentRoute: () => Route$3
@@ -865,6 +787,7 @@ var ArticlesIndexRoute = Route$5.update({
 var rootRouteChildren = {
 	IndexRoute,
 	AboutRoute,
+	AuthRoute,
 	VoicesRoute,
 	ArticlesSlugRoute: Route$4.update({
 		id: "/articles/$slug",
