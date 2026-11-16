@@ -76,10 +76,22 @@ function PasswordInput({
 function GoogleMark() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5">
-      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.74 2.98-4.31 2.98-7.41Z" />
-      <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.36l-3.24-2.54c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.39 13.93A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.64.39 3.19 1.04 4.55l3.35-2.62Z" />
-      <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z" />
+      <path
+        fill="#4285F4"
+        d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.74 2.98-4.31 2.98-7.41Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 22c2.7 0 4.97-.9 6.62-2.36l-3.24-2.54c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.39 13.93A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.64.39 3.19 1.04 4.55l3.35-2.62Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.94c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z"
+      />
     </svg>
   );
 }
@@ -94,7 +106,11 @@ function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const isRegister = mode === "register";
+  // Called only from event handlers, so `window` is always available (this route is also SSR-rendered).
+  const emailRedirectTo = () => `${window.location.origin}/auth?mode=signin`;
 
   useEffect(() => {
     if (!loading && user) void navigate({ to: "/dashboard", replace: true });
@@ -124,7 +140,10 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { full_name: fullName.trim() } },
+          options: {
+            data: { full_name: fullName.trim() },
+            emailRedirectTo: emailRedirectTo(),
+          },
         });
         if (error) throw error;
 
@@ -132,17 +151,38 @@ function AuthPage() {
           toast.success("Welcome to YWBA. Your account is ready.");
           await navigate({ to: "/dashboard", replace: true });
         } else {
-          toast.success("Almost there — check your email to confirm your account.");
+          setPendingEmail(email.trim());
+          if (data.user?.identities?.length === 0) {
+            toast.success(
+              "That email is already registered — resend the confirmation link below if you still need it.",
+            );
+          } else {
+            toast.success("Almost there — check your email to confirm your account.");
+          }
           switchMode("signin");
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (error) throw error;
+        if (error) {
+          if (/email not confirmed/i.test(error.message)) {
+            setPendingEmail(email.trim());
+            toast.error(
+              "Please confirm your email first, then sign in. You can resend the link below.",
+            );
+            return;
+          }
+          throw error;
+        }
+        setPendingEmail(null);
         toast.success("Welcome back.");
         await navigate({ to: "/dashboard", replace: true });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "We couldn't complete that request. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "We couldn't complete that request. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -156,7 +196,7 @@ function AuthPage() {
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth?mode=signin`,
+        redirectTo: emailRedirectTo(),
       });
       if (error) throw error;
       toast.success("Password reset instructions are on their way.");
@@ -167,12 +207,32 @@ function AuthPage() {
     }
   };
 
+  const resendConfirmation = async () => {
+    if (!pendingEmail) return;
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingEmail,
+        options: { emailRedirectTo: emailRedirectTo() },
+      });
+      if (error) throw error;
+      toast.success("Confirmation email sent again — check your inbox and spam folder.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "We couldn't resend the confirmation email.",
+      );
+    } finally {
+      setResending(false);
+    }
+  };
+
   const continueWithGoogle = async () => {
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth?mode=signin` },
+        options: { redirectTo: emailRedirectTo() },
       });
       if (error) throw error;
     } catch (error) {
@@ -197,15 +257,24 @@ function AuthPage() {
               “Many voices, one community, a shared journey of wisdom.”
             </blockquote>
             <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3 text-sm text-primary-foreground/80">
-              <span className="flex items-center gap-2"><Check className="size-4 text-gold" /> Share your voice</span>
-              <span className="flex items-center gap-2"><Check className="size-4 text-gold" /> Connect with members</span>
-              <span className="flex items-center gap-2"><Check className="size-4 text-gold" /> Grow together</span>
+              <span className="flex items-center gap-2">
+                <Check className="size-4 text-gold" /> Share your voice
+              </span>
+              <span className="flex items-center gap-2">
+                <Check className="size-4 text-gold" /> Connect with members
+              </span>
+              <span className="flex items-center gap-2">
+                <Check className="size-4 text-gold" /> Grow together
+              </span>
             </div>
           </div>
         </div>
 
         <div className="relative flex items-center justify-center px-5 py-12 sm:px-10 lg:px-14 xl:px-20">
-          <div className="pointer-events-none absolute right-0 top-0 size-56 rounded-bl-full bg-gold-soft/45" aria-hidden />
+          <div
+            className="pointer-events-none absolute right-0 top-0 size-56 rounded-bl-full bg-gold-soft/45"
+            aria-hidden
+          />
           <div className="relative w-full max-w-md">
             <div className="mb-8">
               <div className="mb-6 inline-flex size-12 items-center justify-center rounded-full bg-gold-soft text-primary lg:hidden">
@@ -222,7 +291,11 @@ function AuthPage() {
               </p>
             </div>
 
-            <div className="mb-7 grid grid-cols-2 border-b border-border" role="tablist" aria-label="Account access">
+            <div
+              className="mb-7 grid grid-cols-2 border-b border-border"
+              role="tablist"
+              aria-label="Account access"
+            >
               {(["signin", "register"] as const).map((tab) => {
                 const selected = mode === tab;
                 return (
@@ -238,7 +311,9 @@ function AuthPage() {
                     )}
                   >
                     {tab === "signin" ? "Sign in" : "Sign up"}
-                    {selected ? <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" /> : null}
+                    {selected ? (
+                      <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />
+                    ) : null}
                   </button>
                 );
               })}
@@ -258,9 +333,37 @@ function AuthPage() {
 
             <div className="my-6 flex items-center gap-4" aria-hidden="true">
               <span className="h-px flex-1 bg-border" />
-              <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">or use email</span>
+              <span className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                or use email
+              </span>
               <span className="h-px flex-1 bg-border" />
             </div>
+
+            {pendingEmail ? (
+              <div
+                className="mb-6 rounded-md border border-gold/50 bg-gold-soft/35 p-4 text-sm"
+                role="status"
+              >
+                <p className="font-semibold text-foreground">Confirm your email address</p>
+                <p className="mt-1 leading-relaxed text-muted-foreground">
+                  We sent a confirmation link to{" "}
+                  <span className="font-medium text-foreground">{pendingEmail}</span>. Open the
+                  link, then sign in below. Nothing arrived? Check your spam folder or send it
+                  again.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 bg-background"
+                  onClick={() => void resendConfirmation()}
+                  disabled={resending || submitting}
+                >
+                  {resending ? <LoaderCircle className="animate-spin" /> : <Mail />}
+                  {resending ? "Sending…" : "Resend confirmation email"}
+                </Button>
+              </div>
+            ) : null}
 
             <form onSubmit={submit} className="space-y-5">
               {isRegister ? (
@@ -339,7 +442,8 @@ function AuthPage() {
                       className="mt-0.5"
                     />
                     <span>
-                      I agree to uphold the YWBA community guidelines and respect the privacy of fellow members.
+                      I agree to uphold the YWBA community guidelines and respect the privacy of
+                      fellow members.
                     </span>
                   </label>
                 </>
@@ -363,7 +467,9 @@ function AuthPage() {
             </p>
             <p className="mt-8 text-center text-xs leading-relaxed text-muted-foreground">
               By continuing, you acknowledge our respectful community values. Need help?{" "}
-              <Link to="/about" className="font-semibold text-foreground hover:text-primary">Contact YWBA</Link>
+              <Link to="/about" className="font-semibold text-foreground hover:text-primary">
+                Contact YWBA
+              </Link>
             </p>
           </div>
         </div>

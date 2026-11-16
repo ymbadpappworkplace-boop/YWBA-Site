@@ -50,9 +50,13 @@ export type ContactData = {
   youtube?: string;
 };
 
-function fail(context: string, error: unknown): never {
+/**
+ * Public content should never take the whole page down. If the database is
+ * unreachable or still lacks the schema (e.g. a freshly connected Supabase
+ * project), log the failure and render the built-in copy / empty states.
+ */
+function report(context: string, error: unknown) {
   console.error(`[public] ${context}`, error);
-  throw new Error("We couldn't load this content right now. Please try again shortly.");
 }
 
 export const getHomeData = createServerFn({ method: "GET" }).handler(async () => {
@@ -88,7 +92,7 @@ export const getHomeData = createServerFn({ method: "GET" }).handler(async () =>
     sb.from("articles").select("id", { count: "exact", head: true }).eq("status", "published"),
   ]);
   const err = home.error ?? featured.error ?? latest.error ?? thoughts.error ?? announcements.error;
-  if (err) fail("home", err);
+  if (err) report("home", err);
   return {
     hero: {
       title: home.data?.title || "One Community. Many Voices. A Shared Journey of Wisdom.",
@@ -122,7 +126,7 @@ export const listArticles = createServerFn({ method: "GET" })
       sb.from("categories").select("id, name, slug, description").order("sort_order"),
       sb.from("articles").select("author_name").eq("status", "published").limit(1000),
     ]);
-    if (cats.error) fail("categories", cats.error);
+    if (cats.error) report("categories", cats.error);
 
     let query = sb
       .from("articles")
@@ -141,7 +145,7 @@ export const listArticles = createServerFn({ method: "GET" })
     if (q) query = query.or(`title.ilike.%${q}%,excerpt.ilike.%${q}%,content.ilike.%${q}%`);
 
     const res = await query;
-    if (res.error) fail("articles", res.error);
+    if (res.error) report("articles", res.error);
     const authors = Array.from(
       new Set((authorsRes.data ?? []).map((a) => a.author_name).filter(Boolean)),
     ).sort();
@@ -166,7 +170,10 @@ export const getArticle = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .eq("status", "published")
       .maybeSingle();
-    if (res.error) fail("article", res.error);
+    if (res.error) {
+      report("article", res.error);
+      return { article: null, related: [] as ArticleCardData[] };
+    }
     if (!res.data) return { article: null, related: [] as ArticleCardData[] };
 
     let relatedQuery = sb
@@ -217,14 +224,14 @@ export const listThoughts = createServerFn({ method: "GET" })
       .range(from, from + THOUGHTS_PAGE_SIZE - 1);
     if (data.category) query = query.eq("category", data.category);
     const res = await query;
-    if (res.error) fail("thoughts", res.error);
+    if (res.error) report("thoughts", res.error);
     return { items: (res.data ?? []) as ThoughtData[], total: res.count ?? 0, page };
   });
 
 export const getAboutContent = createServerFn({ method: "GET" }).handler(async () => {
   const sb = createPublicClient();
   const res = await sb.from("site_content").select("title, body, data").eq("key", "about").maybeSingle();
-  if (res.error) fail("about", res.error);
+  if (res.error) report("about", res.error);
   return {
     title: res.data?.title ?? "About YWBA",
     body: res.data?.body ?? "",

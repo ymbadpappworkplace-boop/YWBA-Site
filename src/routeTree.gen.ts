@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as VoicesRouteImport } from './routes/voices'
 import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
 import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -32,6 +35,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VoicesRoute = VoicesRouteImport.update({
   id: '/voices',
   path: '/voices',
@@ -47,6 +55,16 @@ const ArticlesSlugRoute = ArticlesSlugRouteImport.update({
   path: '/articles/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
   id: '/api/public/media/$',
   path: '/api/public/media/$',
@@ -57,9 +75,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/voices': typeof VoicesRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/articles/': typeof ArticlesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesByTo {
@@ -68,7 +89,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/voices': typeof VoicesRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/articles': typeof ArticlesIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesById {
@@ -76,9 +99,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/voices': typeof VoicesRoute
   '/articles/$slug': typeof ArticlesSlugRoute
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/articles/': typeof ArticlesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRouteTypes {
@@ -87,9 +113,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/auth'
+    | '/dashboard'
     | '/voices'
     | '/articles/$slug'
+    | '/dashboard/profile'
     | '/articles/'
+    | '/dashboard/'
     | '/api/public/media/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -98,16 +127,21 @@ export interface FileRouteTypes {
     | '/auth'
     | '/voices'
     | '/articles/$slug'
+    | '/dashboard/profile'
     | '/articles'
+    | '/dashboard'
     | '/api/public/media/$'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/auth'
+    | '/dashboard'
     | '/voices'
     | '/articles/$slug'
+    | '/dashboard/profile'
     | '/articles/'
+    | '/dashboard/'
     | '/api/public/media/$'
   fileRoutesById: FileRoutesById
 }
@@ -115,6 +149,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   VoicesRoute: typeof VoicesRoute
   ArticlesSlugRoute: typeof ArticlesSlugRoute
   ArticlesIndexRoute: typeof ArticlesIndexRoute
@@ -144,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/voices': {
       id: '/voices'
       path: '/voices'
@@ -165,6 +207,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArticlesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/api/public/media/$': {
       id: '/api/public/media/$'
       path: '/api/public/media/$'
@@ -175,10 +231,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DashboardRouteChildren {
+  DashboardProfileRoute: typeof DashboardProfileRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardProfileRoute: DashboardProfileRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   VoicesRoute: VoicesRoute,
   ArticlesSlugRoute: ArticlesSlugRoute,
   ArticlesIndexRoute: ArticlesIndexRoute,
