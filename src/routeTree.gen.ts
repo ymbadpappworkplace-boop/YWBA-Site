@@ -18,6 +18,7 @@ import { Route as ArticlesIndexRouteImport } from './routes/articles.index'
 import { Route as ArticlesSlugRouteImport } from './routes/articles.$slug'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardProfileRouteImport } from './routes/dashboard.profile'
+import { Route as DashboardVoicesNewRouteImport } from './routes/dashboard.voices.new'
 import { Route as ApiPublicMediaSplatRouteImport } from './routes/api/public/media.$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const DashboardProfileRoute = DashboardProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardVoicesNewRoute = DashboardVoicesNewRouteImport.update({
+  id: '/voices/new',
+  path: '/voices/new',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ApiPublicMediaSplatRoute = ApiPublicMediaSplatRouteImport.update({
   id: '/api/public/media/$',
   path: '/api/public/media/$',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/articles/': typeof ArticlesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/voices/new': typeof DashboardVoicesNewRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesByTo {
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/articles': typeof ArticlesIndexRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/voices/new': typeof DashboardVoicesNewRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRoutesById {
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/dashboard/profile': typeof DashboardProfileRoute
   '/articles/': typeof ArticlesIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/voices/new': typeof DashboardVoicesNewRoute
   '/api/public/media/$': typeof ApiPublicMediaSplatRoute
 }
 export interface FileRouteTypes {
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/articles/'
     | '/dashboard/'
+    | '/dashboard/voices/new'
     | '/api/public/media/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/articles'
     | '/dashboard'
+    | '/dashboard/voices/new'
     | '/api/public/media/$'
   id:
     | '__root__'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/articles/'
     | '/dashboard/'
+    | '/dashboard/voices/new'
     | '/api/public/media/$'
   fileRoutesById: FileRoutesById
 }
@@ -221,6 +233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProfileRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/voices/new': {
+      id: '/dashboard/voices/new'
+      path: '/voices/new'
+      fullPath: '/dashboard/voices/new'
+      preLoaderRoute: typeof DashboardVoicesNewRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/api/public/media/$': {
       id: '/api/public/media/$'
       path: '/api/public/media/$'
@@ -234,11 +253,13 @@ declare module '@tanstack/react-router' {
 interface DashboardRouteChildren {
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardVoicesNewRoute: typeof DashboardVoicesNewRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardVoicesNewRoute: DashboardVoicesNewRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

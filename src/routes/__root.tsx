@@ -13,7 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/hooks/use-auth";
-import { SiteHeader } from "@/components/site/site-header";
+import { AppShell } from "@/components/site/app-sidebar";
 import { SiteFooter } from "@/components/site/site-footer";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -92,7 +92,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
-  loader: ({ context }) => context.queryClient.prefetchQuery(contactQuery()),
+  loader: ({ context }) => context.queryClient.ensureQueryData(contactQuery()),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -125,13 +125,12 @@ function RootComponent() {
         >
           Skip to content
         </a>
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
+        <AppShell>
           <main id="main" className="flex-1">
             <Outlet />
           </main>
           <SiteFooter />
-        </div>
+        </AppShell>
         <Toaster position="top-center" closeButton />
       </AuthProvider>
     </QueryClientProvider>

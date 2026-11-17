@@ -1,9 +1,12 @@
 import { useEffect } from "react";
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, LoaderCircle, LogOut, UserRound } from "lucide-react";
+import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, LoaderCircle, LogOut, PenLine, UserRound } from "lucide-react";
 
+import { MembershipBadge } from "@/components/member/membership-badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard")({
@@ -17,14 +20,19 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 const TABS = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { to: "/dashboard/profile", label: "My profile", icon: UserRound },
+  { to: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+  { to: "/dashboard/profile", label: "My profile", icon: UserRound, exact: true },
+  { to: "/dashboard/voices/new", label: "Share a voice", icon: PenLine, exact: true },
 ] as const;
 
+const tabClass = cn(
+  "flex shrink-0 items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors",
+  "hover:bg-secondary/70 hover:text-foreground data-[status=active]:bg-secondary data-[status=active]:text-primary",
+);
+
 function DashboardLayout() {
-  const { user, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -41,48 +49,75 @@ function DashboardLayout() {
     );
   }
 
+  const name = profile?.full_name || user.email || "";
+
   const handleSignOut = async () => {
     await signOut();
     await navigate({ to: "/", replace: true });
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-12 sm:px-8 lg:py-16">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div>
-          <p className="eyebrow !text-primary">Member portal</p>
-          <h1 className="mt-2 font-serif text-3xl sm:text-4xl">Member dashboard</h1>
-        </div>
-        <Button type="button" variant="outline" onClick={() => void handleSignOut()}>
-          <LogOut className="size-4" />
-          Sign out
-        </Button>
-      </div>
+    <div className="container-page py-8 md:py-12">
+      <div className="grid gap-8 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
+        <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+            <div className="flex items-center gap-3">
+              <Avatar className="size-12 border border-border">
+                {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
+                <AvatarFallback className="bg-gold-soft font-serif text-base text-primary">
+                  {initials(name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate font-medium">{name || "YWBA member"}</p>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  {profile?.member_id ?? "No member ID"}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-4">
+              <MembershipBadge status={profile?.membership_status} />
+              <Link
+                to="/dashboard/profile"
+                className="text-xs font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Edit
+              </Link>
+            </div>
+          </div>
 
-      <nav aria-label="Dashboard" className="mt-8 flex gap-1 border-b border-border">
-        {TABS.map((tab) => {
-          const active = pathname === tab.to;
-          return (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              className={cn(
-                "relative flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                active ? "text-primary" : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-current={active ? "page" : undefined}
-            >
-              <tab.icon className="size-4" />
-              {tab.label}
-              {active ? <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" /> : null}
-            </Link>
-          );
-        })}
-      </nav>
+          <nav
+            aria-label="Dashboard"
+            className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-card lg:flex-col lg:overflow-visible"
+          >
+            {TABS.map((tab) => (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                activeOptions={{ exact: tab.exact }}
+                className={tabClass}
+              >
+                <tab.icon className="size-4" />
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
 
-      <div className="mt-10">
-        <Outlet />
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => void handleSignOut()}
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </Button>
+        </aside>
+
+        <section className="min-w-0">
+          <Outlet />
+        </section>
       </div>
-    </main>
+    </div>
   );
 }

@@ -11,7 +11,12 @@ import {
 export const homeQuery = () =>
   queryOptions({ queryKey: ["public", "home"], queryFn: () => getHomeData(), staleTime: 60_000 });
 
-export type ArticleFilters = { q?: string; category?: string; author?: string; page?: number };
+export type ArticleFilters = {
+  q?: string | undefined;
+  category?: string | undefined;
+  author?: string | undefined;
+  page?: number | undefined;
+};
 
 export const articlesQuery = (filters: ArticleFilters) =>
   queryOptions({
@@ -27,7 +32,10 @@ export const articleQuery = (slug: string) =>
     staleTime: 60_000,
   });
 
-export const thoughtsQuery = (filters: { category?: string; page?: number }) =>
+export const thoughtsQuery = (filters: {
+  category?: string | undefined;
+  page?: number | undefined;
+}) =>
   queryOptions({
     queryKey: ["public", "thoughts", filters],
     queryFn: () => listThoughts({ data: filters }),
@@ -35,7 +43,15 @@ export const thoughtsQuery = (filters: { category?: string; page?: number }) =>
   });
 
 export const aboutQuery = () =>
-  queryOptions({ queryKey: ["public", "about"], queryFn: () => getAboutContent(), staleTime: 60_000 });
+  queryOptions({
+    queryKey: ["public", "about"],
+    queryFn: () => getAboutContent(),
+    staleTime: 60_000,
+  });
 
 export const contactQuery = () =>
-  queryOptions({ queryKey: ["public", "contact"], queryFn: () => getContact(), staleTime: 300_000 });
+  queryOptions({
+    queryKey: ["public", "contact"],
+    queryFn: () => getContact(),
+    staleTime: 300_000,
+  });

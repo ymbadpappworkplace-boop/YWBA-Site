@@ -8,9 +8,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { SRI_LANKA_DISTRICTS } from "@/lib/constants";
 import { formatDate, initials } from "@/lib/format";
 
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
@@ -157,224 +165,255 @@ function ProfilePage() {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <form onSubmit={save} className="order-2 space-y-6 lg:order-1">
-        <div>
-          <h2 className="font-serif text-2xl">Personal details</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            These details help the Association keep in touch with you. Your email address and
-            membership ID are managed by YWBA and can&apos;t be edited here.
-          </p>
-        </div>
+    <div className="space-y-8">
+      <header>
+        <p className="eyebrow flex items-center gap-2 !text-primary">
+          <span className="h-px w-6 bg-gold" aria-hidden />
+          Account
+        </p>
+        <h1 className="mt-2 font-serif text-3xl sm:text-4xl">My profile</h1>
+        <p className="mt-3 max-w-2xl leading-relaxed text-muted-foreground">
+          Keep your personal details current so the Association can reach you about programmes and
+          membership.
+        </p>
+      </header>
 
-        <div className="space-y-2">
-          <Label htmlFor="profile-full-name">Full name</Label>
-          <Input
-            id="profile-full-name"
-            value={fullName}
-            onChange={(event) => setFullName(event.target.value)}
-            placeholder="Your full name"
-            autoComplete="name"
-            maxLength={120}
-            required
-            disabled={!profile}
-            className="h-12 bg-card shadow-none"
-          />
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="profile-phone">Phone number</Label>
-            <Input
-              id="profile-phone"
-              type="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
-              placeholder="+94 77 000 0000"
-              autoComplete="tel"
-              maxLength={40}
-              disabled={!profile}
-              className="h-12 bg-card shadow-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="profile-dob">Date of birth</Label>
-            <Input
-              id="profile-dob"
-              type="date"
-              value={dateOfBirth}
-              onChange={(event) => setDateOfBirth(event.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
-              disabled={!profile}
-              className="h-12 bg-card shadow-none"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="profile-district">District</Label>
-            <Input
-              id="profile-district"
-              value={district}
-              onChange={(event) => setDistrict(event.target.value)}
-              placeholder="e.g. Colombo"
-              maxLength={80}
-              disabled={!profile}
-              className="h-12 bg-card shadow-none"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="profile-background">Background</Label>
-            <Input
-              id="profile-background"
-              value={background}
-              onChange={(event) => setBackground(event.target.value)}
-              placeholder="School, university or profession"
-              maxLength={300}
-              disabled={!profile}
-              className="h-12 bg-card shadow-none"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="profile-bio">Short bio</Label>
-          <Textarea
-            id="profile-bio"
-            value={bio}
-            onChange={(event) => setBio(event.target.value)}
-            placeholder="A few lines about yourself and what you hope to contribute to the community."
-            maxLength={1000}
-            disabled={!profile}
-            className="bg-card shadow-none"
-          />
-          <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" size="lg" disabled={!profile || saving || uploading}>
-            {saving ? <LoaderCircle className="animate-spin" /> : null}
-            {saving ? "Saving…" : "Save changes"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => void refreshProfile()}
-            disabled={saving || uploading}
-          >
-            <RotateCcw className="size-4" />
-            Refresh
-          </Button>
-        </div>
-
-        {!profile ? (
-          <p className="rounded-md border border-gold/50 bg-gold-soft/35 p-4 text-sm leading-relaxed text-muted-foreground">
-            No membership profile is linked to this account yet, so editing is disabled. An
-            administrator can create it with the profile backfill script; then reload this page.
-          </p>
-        ) : null}
-      </form>
-
-      <aside className="order-1 space-y-6 lg:order-2">
-        <section className="border border-border bg-card p-6" aria-labelledby="photo-heading">
-          <h2 id="photo-heading" className="font-serif text-xl">
-            Profile photo
-          </h2>
-          <div className="mt-5 flex flex-col items-center gap-4">
-            <Avatar className="size-28 border border-border">
-              {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
-              <AvatarFallback className="bg-gold-soft font-serif text-3xl text-primary">
-                {initials(displayName)}
-              </AvatarFallback>
-            </Avatar>
-
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void uploadAvatar(file);
-              }}
-            />
-
-            <div className="flex w-full flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInput.current?.click()}
-                disabled={!profile || uploading}
-              >
-                {uploading ? (
-                  <LoaderCircle className="animate-spin" />
-                ) : (
-                  <Camera className="size-4" />
-                )}
-                {uploading ? "Uploading…" : "Upload photo"}
-              </Button>
-              {profile?.avatar_url ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => void removeAvatar()}
-                  disabled={uploading}
-                >
-                  Remove photo
-                </Button>
-              ) : null}
-            </div>
-            <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              JPG, PNG or WebP, up to 3 MB.
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <form
+          onSubmit={save}
+          className="order-2 space-y-6 rounded-xl border border-border bg-card p-6 shadow-card sm:p-8 lg:order-1"
+        >
+          <div>
+            <h2 className="font-serif text-2xl">Personal details</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              These details help the Association keep in touch with you. Your email address and
+              membership ID are managed by YWBA and can&apos;t be edited here.
             </p>
           </div>
-        </section>
 
-        <section className="border border-border bg-card p-6" aria-labelledby="membership-heading">
-          <h2 id="membership-heading" className="font-serif text-xl">
-            Membership
-          </h2>
-          <dl className="mt-5 space-y-4 text-sm">
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                Member ID
-              </dt>
-              <dd className="mt-1 font-mono">{profile?.member_id ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                Status
-              </dt>
-              <dd className="mt-1">
-                {profile ? <MembershipBadge status={profile.membership_status} /> : "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                Email
-              </dt>
-              <dd className="mt-1 flex items-start gap-2 break-all">
-                <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                {user?.email}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                Member since
-              </dt>
-              <dd className="mt-1">{formatDate(profile?.created_at) || "—"}</dd>
-            </div>
-          </dl>
+          <div className="space-y-2">
+            <Label htmlFor="profile-full-name">Full name</Label>
+            <Input
+              id="profile-full-name"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+              placeholder="Your full name"
+              autoComplete="name"
+              maxLength={120}
+              required
+              disabled={!profile}
+              className="h-12 bg-background shadow-none"
+            />
+          </div>
 
-          <p className="mt-5 flex gap-2 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-            Your email address, member ID and membership status are protected and managed by the
-            Association.
-          </p>
-        </section>
-      </aside>
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="profile-phone">Phone number</Label>
+              <Input
+                id="profile-phone"
+                type="tel"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="+94 77 000 0000"
+                autoComplete="tel"
+                maxLength={40}
+                disabled={!profile}
+                className="h-12 bg-background shadow-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-dob">Date of birth</Label>
+              <Input
+                id="profile-dob"
+                type="date"
+                value={dateOfBirth}
+                onChange={(event) => setDateOfBirth(event.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                disabled={!profile}
+                className="h-12 bg-background shadow-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="profile-district">District</Label>
+              <Select
+                value={district || "unset"}
+                onValueChange={(value) => setDistrict(value === "unset" ? "" : value)}
+                disabled={!profile}
+              >
+                <SelectTrigger id="profile-district" className="h-12 bg-background">
+                  <SelectValue placeholder="Select a district" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unset">Not specified</SelectItem>
+                  {SRI_LANKA_DISTRICTS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-background">Background</Label>
+              <Input
+                id="profile-background"
+                value={background}
+                onChange={(event) => setBackground(event.target.value)}
+                placeholder="School, university or profession"
+                maxLength={300}
+                disabled={!profile}
+                className="h-12 bg-background shadow-none"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="profile-bio">Short bio</Label>
+            <Textarea
+              id="profile-bio"
+              value={bio}
+              onChange={(event) => setBio(event.target.value)}
+              placeholder="A few lines about yourself and what you hope to contribute to the community."
+              maxLength={1000}
+              disabled={!profile}
+              className="bg-background shadow-none"
+            />
+            <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" size="lg" disabled={!profile || saving || uploading}>
+              {saving ? <LoaderCircle className="animate-spin" /> : null}
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void refreshProfile()}
+              disabled={saving || uploading}
+            >
+              <RotateCcw className="size-4" />
+              Refresh
+            </Button>
+          </div>
+
+          {!profile ? (
+            <p className="rounded-md border border-gold/50 bg-gold-soft/35 p-4 text-sm leading-relaxed text-muted-foreground">
+              No membership profile is linked to this account yet, so editing is disabled. An
+              administrator can create it with the profile backfill script; then reload this page.
+            </p>
+          ) : null}
+        </form>
+
+        <aside className="order-1 space-y-6 lg:order-2">
+          <section
+            className="rounded-xl border border-border bg-card p-6 shadow-card"
+            aria-labelledby="photo-heading"
+          >
+            <h2 id="photo-heading" className="font-serif text-xl">
+              Profile photo
+            </h2>
+            <div className="mt-5 flex flex-col items-center gap-4">
+              <Avatar className="size-28 border border-border">
+                {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
+                <AvatarFallback className="bg-gold-soft font-serif text-3xl text-primary">
+                  {initials(displayName)}
+                </AvatarFallback>
+              </Avatar>
+
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadAvatar(file);
+                }}
+              />
+
+              <div className="flex w-full flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInput.current?.click()}
+                  disabled={!profile || uploading}
+                >
+                  {uploading ? (
+                    <LoaderCircle className="animate-spin" />
+                  ) : (
+                    <Camera className="size-4" />
+                  )}
+                  {uploading ? "Uploading…" : "Upload photo"}
+                </Button>
+                {profile?.avatar_url ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void removeAvatar()}
+                    disabled={uploading}
+                  >
+                    Remove photo
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                JPG, PNG or WebP, up to 3 MB.
+              </p>
+            </div>
+          </section>
+
+          <section
+            className="rounded-xl border border-border bg-card p-6 shadow-card"
+            aria-labelledby="membership-heading"
+          >
+            <h2 id="membership-heading" className="font-serif text-xl">
+              Membership
+            </h2>
+            <dl className="mt-5 space-y-4 text-sm">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Member ID
+                </dt>
+                <dd className="mt-1 font-mono">{profile?.member_id ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Status
+                </dt>
+                <dd className="mt-1">
+                  {profile ? <MembershipBadge status={profile.membership_status} /> : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Email
+                </dt>
+                <dd className="mt-1 flex items-start gap-2 break-all">
+                  <Mail className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  {user?.email}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Member since
+                </dt>
+                <dd className="mt-1">{formatDate(profile?.created_at) || "—"}</dd>
+              </div>
+            </dl>
+
+            <p className="mt-5 flex gap-2 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+              Your email address, member ID and membership status are protected and managed by the
+              Association.
+            </p>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -126,6 +126,8 @@
   --sidebar-ring: var(--ring);
 
   --shadow-soft: 0 1px 2px oklch(0.23 0.012 50 / 6%), 0 8px 24px -12px oklch(0.23 0.012 50 / 12%);
+  --shadow-card: 0 1px 2px oklch(0.23 0.012 50 / 5%), 0 14px 32px -20px oklch(0.23 0.012 50 / 20%);
+  --shadow-lift: 0 2px 6px oklch(0.23 0.012 50 / 7%), 0 30px 60px -30px oklch(0.23 0.012 50 / 28%);
 }
 
 @layer base {
@@ -136,10 +138,16 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(70rem 34rem at 12% -12%, oklch(0.92 0.04 85 / 55%), transparent 62%),
+      radial-gradient(56rem 30rem at 108% -4%, oklch(0.36 0.11 15 / 7%), transparent 58%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
@@ -151,11 +159,58 @@
     font-family: var(--font-serif);
     font-weight: 500;
     letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   ::selection {
     background: var(--gold-soft);
     color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: none;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.82 0.02 78) transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@keyframes ywba-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ywba-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -187,6 +242,55 @@
 
 @utility shadow-soft {
   box-shadow: var(--shadow-soft);
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+@utility shadow-lift {
+  box-shadow: var(--shadow-lift);
+}
+
+/* Frosted panel used by the sticky header and floating cards */
+@utility glass {
+  background-color: oklch(0.99 0.006 85 / 78%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Raised surface with a soft gold-tinted hover state */
+@utility lift {
+  transition:
+    transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 420ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 420ms ease;
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lift);
+    border-color: oklch(0.7 0.095 78 / 55%);
+  }
+}
+
+/* Deep burgundy panel with subtle light falloff */
+@utility mesh-primary {
+  background-color: var(--primary-deep);
+  background-image:
+    radial-gradient(46rem 26rem at 8% -10%, oklch(0.7 0.095 78 / 24%), transparent 62%),
+    radial-gradient(34rem 22rem at 102% 108%, oklch(0.36 0.11 15 / 70%), transparent 58%);
+}
+
+@utility animate-rise {
+  animation: ywba-rise 780ms cubic-bezier(0.16, 0.8, 0.24, 1) both;
+}
+
+@utility animate-fade {
+  animation: ywba-fade 900ms ease both;
+}
+
+@utility hairline-gold {
+  background: linear-gradient(90deg, transparent, oklch(0.7 0.095 78 / 55%), transparent);
+  height: 1px;
 }
 
 /* Subtle zoom for editorial images on hover */

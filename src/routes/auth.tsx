@@ -16,7 +16,7 @@ type AuthMode = "signin" | "register";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { mode: AuthMode } => ({
-    mode: search.mode === "register" ? "register" : "signin",
+    mode: search["mode"] === "register" ? "register" : "signin",
   }),
   head: () => ({
     meta: [
@@ -43,7 +43,7 @@ function PasswordInput({
   onChange: (value: string) => void;
   placeholder: string;
   autoComplete: string;
-  minLength?: number;
+  minLength?: number | undefined;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -59,7 +59,7 @@ function PasswordInput({
         autoComplete={autoComplete}
         minLength={minLength}
         required
-        className="h-12 bg-card pl-10 pr-11 shadow-none"
+        className="h-12 bg-background pl-10 pr-11 shadow-none"
       />
       <button
         type="button"
@@ -275,6 +275,10 @@ function AuthPage() {
             className="pointer-events-none absolute right-0 top-0 size-56 rounded-bl-full bg-gold-soft/45"
             aria-hidden
           />
+          <div
+            className="pointer-events-none absolute -left-16 bottom-10 size-40 rounded-full border border-gold/20"
+            aria-hidden
+          />
           <div className="relative w-full max-w-md">
             <div className="mb-8">
               <div className="mb-6 inline-flex size-12 items-center justify-center rounded-full bg-gold-soft text-primary lg:hidden">
@@ -292,7 +296,7 @@ function AuthPage() {
             </div>
 
             <div
-              className="mb-7 grid grid-cols-2 border-b border-border"
+              className="mb-7 grid grid-cols-2 gap-1 rounded-full border border-border bg-secondary/70 p-1"
               role="tablist"
               aria-label="Account access"
             >
@@ -306,14 +310,13 @@ function AuthPage() {
                     aria-selected={selected}
                     onClick={() => switchMode(tab)}
                     className={cn(
-                      "relative pb-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      selected ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                      "rounded-full py-2.5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      selected
+                        ? "bg-card text-primary shadow-soft"
+                        : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {tab === "signin" ? "Sign in" : "Sign up"}
-                    {selected ? (
-                      <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />
-                    ) : null}
                   </button>
                 );
               })}
@@ -377,7 +380,7 @@ function AuthPage() {
                     autoComplete="name"
                     required
                     maxLength={120}
-                    className="h-12 bg-card shadow-none"
+                    className="h-12 bg-background shadow-none"
                   />
                 </div>
               ) : null}
@@ -394,7 +397,7 @@ function AuthPage() {
                     placeholder="you@example.com"
                     autoComplete="email"
                     required
-                    className="h-12 bg-card pl-10 shadow-none"
+                    className="h-12 bg-background pl-10 shadow-none"
                   />
                 </div>
               </div>
