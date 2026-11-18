@@ -122,8 +122,10 @@ function AuthPage() {
   const [submitting, setSubmitting] = useState(false);
   const oauthErrorShown = useRef(false);
   const isRegister = mode === "register";
-  // Called only from event handlers, so `window` is always available (this route is also SSR-rendered).
-  const redirectTo = () => `${window.location.origin}/auth?mode=signin`;
+  // No query string here: Supabase matches `redirectTo` against the allowlist
+  // before appending `?code=`, so `/auth` is much easier to allow than
+  // `/auth?mode=signin`.
+  const redirectTo = () => `${window.location.origin}/auth`;
 
   useEffect(() => {
     if (!loading && user) void navigate({ to: "/dashboard", replace: true });
@@ -147,13 +149,20 @@ function AuthPage() {
     )
       .replace(/\+/g, " ")
       .trim();
+    const errorCode = params.get("error_code") ?? hashParams.get("error_code") ?? "";
+    const expiredState =
+      /flow_state_already_used|flow_state_not_found|state has already been used/i.test(
+        `${errorCode} ${description}`,
+      );
 
     toast.error(
       error === "access_denied"
         ? "Google sign-in was cancelled. Try again, or use your email and password."
-        : description
-          ? `We couldn't sign you in with Google: ${description}`
-          : "We couldn't sign you in with Google. Please try again.",
+        : expiredState
+          ? "That sign-in attempt expired or was already used. Please press “Continue with Google” again."
+          : description
+            ? `We couldn't sign you in with Google: ${description}`
+            : "We couldn't sign you in with Google. Please try again.",
     );
     void navigate({ to: "/auth", search: { mode }, replace: true });
   }, [mode, navigate]);
