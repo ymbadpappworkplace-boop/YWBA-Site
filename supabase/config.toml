@@ -7,12 +7,13 @@ project_id = "hfzcindiwpkgvsdhelhv"
 # `supabase config push` rewrites the dashboard's URL Configuration from this
 # file, and the CLI default is http://localhost:3000. Keeping the real values
 # here means a push can no longer reset Site URL back to localhost.
+#
+# Add a localhost entry temporarily if you need to test OAuth in dev; production
+# must stay localhost-free so a bad redirect can never send members there.
 [auth]
 site_url = "https://ywbasite.vercel.app"
 additional_redirect_urls = [
   "https://ywbasite.vercel.app/**",
-  "http://localhost:8080/**",
-  "http://localhost:3000/**",
 ]
 
 # New members are signed in immediately after registration, so Supabase must
