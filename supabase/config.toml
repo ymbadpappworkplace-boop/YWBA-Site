@@ -1,5 +1,20 @@
 project_id = "hfzcindiwpkgvsdhelhv"
 
+# OAuth / email links land here when the requested `redirect_to` is not in
+# `additional_redirect_urls`. It must be the deployed site — never localhost,
+# or every hosted sign-in bounces to a dead local port.
+#
+# `supabase config push` rewrites the dashboard's URL Configuration from this
+# file, and the CLI default is http://localhost:3000. Keeping the real values
+# here means a push can no longer reset Site URL back to localhost.
+[auth]
+site_url = "https://ywbasite.vercel.app"
+additional_redirect_urls = [
+  "https://ywbasite.vercel.app/**",
+  "http://localhost:8080/**",
+  "http://localhost:3000/**",
+]
+
 # New members are signed in immediately after registration, so Supabase must
 # not send or require a confirmation email. Apply this to the hosted project
 # from the Supabase Dashboard or with `supabase config push`.

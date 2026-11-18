@@ -43,11 +43,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const userId = session?.user.id;
 
+  // Supabase appends `?code=` to whichever URL it redirected to. Normally that
+  // is `/auth`, but when `redirectTo` is not allowlisted it falls back to the
+  // Site URL — often the site root. Finish the journey on the dashboard and
+  // drop the code, so a refresh can't try to redeem it twice.
+  useEffect(() => {
+    if (!session || typeof window === "undefined") return;
+    if (!new URLSearchParams(window.location.search).has("code")) return;
+    if (window.location.pathname === "/dashboard") return;
+    void router.navigate({ to: "/dashboard", replace: true });
+  }, [router, session]);
+
   const profileQuery = useQuery({
     queryKey: ["me", "profile", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId!).maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId!)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -57,7 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["me", "roles", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId!);
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId!);
       if (error) throw error;
       return (data ?? []).map((r) => r.role);
     },
