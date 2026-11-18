@@ -1,6 +1,16 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, UsersRound } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import heroImage from "@/assets/hero-temple.jpg";
@@ -107,7 +117,7 @@ function GoogleMark() {
 
 function AuthPage() {
   const { mode } = Route.useSearch();
-  const { user, loading } = useAuth();
+  const { user, loading, authError, clearAuthError } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -297,6 +307,7 @@ function AuthPage() {
   };
 
   const continueWithGoogle = async () => {
+    clearAuthError();
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -368,6 +379,27 @@ function AuthPage() {
                   : "Sign in to continue to your member dashboard."}
               </p>
             </div>
+
+            {authError ? (
+              <div
+                role="alert"
+                className="mb-6 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive"
+              >
+                <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">We couldn't finish signing you in.</p>
+                  <p className="mt-1 leading-relaxed text-destructive/90">{authError}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearAuthError}
+                  aria-label="Dismiss sign-in error"
+                  className="rounded-sm p-1 text-destructive/70 transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : null}
 
             <div
               className="mb-7 grid grid-cols-2 gap-1 rounded-full border border-border bg-secondary/70 p-1"
