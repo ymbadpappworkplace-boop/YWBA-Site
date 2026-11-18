@@ -1,1 +1,8 @@
 project_id = "hfzcindiwpkgvsdhelhv"
+
+# New members are signed in immediately after registration, so Supabase must
+# not send or require a confirmation email. Apply this to the hosted project
+# from the Supabase Dashboard or with `supabase config push`.
+[auth.email]
+enable_signup = true
+enable_confirmations = false

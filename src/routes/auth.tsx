@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Check, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, UsersRound } from "lucide-react";
 import { toast } from "sonner";
@@ -8,8 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { SRI_LANKA_DISTRICTS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type AuthMode = "signin" | "register";
@@ -103,18 +112,51 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [district, setDistrict] = useState("");
+  const [background, setBackground] = useState("");
+  const [bio, setBio] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [resending, setResending] = useState(false);
+  const oauthErrorShown = useRef(false);
   const isRegister = mode === "register";
   // Called only from event handlers, so `window` is always available (this route is also SSR-rendered).
-  const emailRedirectTo = () => `${window.location.origin}/auth?mode=signin`;
+  const redirectTo = () => `${window.location.origin}/auth?mode=signin`;
 
   useEffect(() => {
     if (!loading && user) void navigate({ to: "/dashboard", replace: true });
   }, [loading, navigate, user]);
+
+  // When Google rejects or the user cancels the consent screen, Supabase sends us
+  // back here with `error` / `error_description` instead of `code`. Show it and
+  // drop the params so a refresh doesn't repeat the message.
+  useEffect(() => {
+    if (oauthErrorShown.current || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const error = params.get("error") ?? hashParams.get("error");
+    if (!error) return;
+
+    oauthErrorShown.current = true;
+    const description = (
+      params.get("error_description") ??
+      hashParams.get("error_description") ??
+      ""
+    )
+      .replace(/\+/g, " ")
+      .trim();
+
+    toast.error(
+      error === "access_denied"
+        ? "Google sign-in was cancelled. Try again, or use your email and password."
+        : description
+          ? `We couldn't sign you in with Google: ${description}`
+          : "We couldn't sign you in with Google. Please try again.",
+    );
+    void navigate({ to: "/auth", search: { mode }, replace: true });
+  }, [mode, navigate]);
 
   const switchMode = (nextMode: AuthMode) => {
     setPassword("");
@@ -141,39 +183,77 @@ function AuthPage() {
           email: email.trim(),
           password,
           options: {
-            data: { full_name: fullName.trim() },
-            emailRedirectTo: emailRedirectTo(),
+            // The database trigger copies these values into public.profiles.
+            data: {
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+              date_of_birth: dateOfBirth,
+              district,
+              background: background.trim(),
+              bio: bio.trim(),
+            },
           },
         });
-        if (error) throw error;
 
-        if (data.session) {
-          toast.success("Welcome to YWBA. Your account is ready.");
-          await navigate({ to: "/dashboard", replace: true });
-        } else {
-          setPendingEmail(email.trim());
-          if (data.user?.identities?.length === 0) {
-            toast.success(
-              "That email is already registered — resend the confirmation link below if you still need it.",
-            );
-          } else {
-            toast.success("Almost there — check your email to confirm your account.");
-          }
-          switchMode("signin");
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) {
-          if (/email not confirmed/i.test(error.message)) {
-            setPendingEmail(email.trim());
-            toast.error(
-              "Please confirm your email first, then sign in. You can resend the link below.",
-            );
+          if (/already registered|already exists|user_already_exists/i.test(error.message)) {
+            toast.error("An account with this email already exists. Please sign in instead.");
+            switchMode("signin");
             return;
           }
           throw error;
         }
-        setPendingEmail(null);
+
+        // Existing accounts are returned with no identities to avoid email enumeration.
+        if (data.user?.identities?.length === 0) {
+          toast.error("An account with this email already exists. Please sign in instead.");
+          switchMode("signin");
+          return;
+        }
+
+        if (data.session) {
+          toast.success("Welcome to YWBA. Your account is ready.");
+          await navigate({ to: "/dashboard", replace: true });
+          return;
+        }
+
+        // With email confirmation disabled Supabase normally returns a session.
+        // Sign in explicitly as a fallback so the new member still gets in.
+        const { data: signedIn, error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (!signInError && signedIn.session) {
+          toast.success("Welcome to YWBA. Your account is ready.");
+          await navigate({ to: "/dashboard", replace: true });
+          return;
+        }
+
+        if (signInError && /email not confirmed/i.test(signInError.message)) {
+          toast.error(
+            "Your account details were saved, but email confirmation is still switched on in Supabase. Turn off “Confirm email” under Authentication → Sign In / Providers → Email, then sign in.",
+          );
+          switchMode("signin");
+          return;
+        }
+
+        toast.success("Your account has been created. Please sign in.");
+        switchMode("signin");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) {
+          if (/email not confirmed/i.test(error.message)) {
+            toast.error(
+              "Email confirmation is still switched on in Supabase. Turn off “Confirm email” under Authentication → Sign In / Providers → Email, then try again.",
+            );
+            return;
+          }
+          if (/invalid login credentials/i.test(error.message)) {
+            toast.error("That email and password do not match. Check your details and try again.");
+            return;
+          }
+          throw error;
+        }
         toast.success("Welcome back.");
         await navigate({ to: "/dashboard", replace: true });
       }
@@ -196,7 +276,7 @@ function AuthPage() {
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: emailRedirectTo(),
+        redirectTo: redirectTo(),
       });
       if (error) throw error;
       toast.success("Password reset instructions are on their way.");
@@ -207,34 +287,19 @@ function AuthPage() {
     }
   };
 
-  const resendConfirmation = async () => {
-    if (!pendingEmail) return;
-    setResending(true);
-    try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: pendingEmail,
-        options: { emailRedirectTo: emailRedirectTo() },
-      });
-      if (error) throw error;
-      toast.success("Confirmation email sent again — check your inbox and spam folder.");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "We couldn't resend the confirmation email.",
-      );
-    } finally {
-      setResending(false);
-    }
-  };
-
   const continueWithGoogle = async () => {
     setSubmitting(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: emailRedirectTo() },
+        options: {
+          redirectTo: redirectTo(),
+          // Always let the member choose which Google account to use.
+          queryParams: { prompt: "select_account" },
+        },
       });
       if (error) throw error;
+      // On success supabase-js sends the browser to Google; nothing else to do here.
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "We couldn't connect to Google.");
       setSubmitting(false);
@@ -342,47 +407,96 @@ function AuthPage() {
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            {pendingEmail ? (
-              <div
-                className="mb-6 rounded-md border border-gold/50 bg-gold-soft/35 p-4 text-sm"
-                role="status"
-              >
-                <p className="font-semibold text-foreground">Confirm your email address</p>
-                <p className="mt-1 leading-relaxed text-muted-foreground">
-                  We sent a confirmation link to{" "}
-                  <span className="font-medium text-foreground">{pendingEmail}</span>. Open the
-                  link, then sign in below. Nothing arrived? Check your spam folder or send it
-                  again.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 bg-background"
-                  onClick={() => void resendConfirmation()}
-                  disabled={resending || submitting}
-                >
-                  {resending ? <LoaderCircle className="animate-spin" /> : <Mail />}
-                  {resending ? "Sending…" : "Resend confirmation email"}
-                </Button>
-              </div>
-            ) : null}
-
             <form onSubmit={submit} className="space-y-5">
               {isRegister ? (
-                <div className="space-y-2">
-                  <Label htmlFor="full-name">Full name</Label>
-                  <Input
-                    id="full-name"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    placeholder="Your full name"
-                    autoComplete="name"
-                    required
-                    maxLength={120}
-                    className="h-12 bg-background shadow-none"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="full-name">Full name</Label>
+                    <Input
+                      id="full-name"
+                      value={fullName}
+                      onChange={(event) => setFullName(event.target.value)}
+                      placeholder="Your full name"
+                      autoComplete="name"
+                      required
+                      maxLength={120}
+                      className="h-12 bg-background shadow-none"
+                    />
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone number</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(event) => setPhone(event.target.value)}
+                        placeholder="+94 77 000 0000"
+                        autoComplete="tel"
+                        maxLength={40}
+                        className="h-12 bg-background shadow-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date-of-birth">Date of birth</Label>
+                      <Input
+                        id="date-of-birth"
+                        type="date"
+                        value={dateOfBirth}
+                        onChange={(event) => setDateOfBirth(event.target.value)}
+                        max={new Date().toISOString().slice(0, 10)}
+                        className="h-12 bg-background shadow-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="district">District</Label>
+                      <Select
+                        value={district || "unset"}
+                        onValueChange={(value) => setDistrict(value === "unset" ? "" : value)}
+                      >
+                        <SelectTrigger id="district" className="h-12 w-full bg-background">
+                          <SelectValue placeholder="Select a district" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unset">Not specified</SelectItem>
+                          {SRI_LANKA_DISTRICTS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="background">Background</Label>
+                      <Input
+                        id="background"
+                        value={background}
+                        onChange={(event) => setBackground(event.target.value)}
+                        placeholder="School, university or profession"
+                        maxLength={300}
+                        className="h-12 bg-background shadow-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Short bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={bio}
+                      onChange={(event) => setBio(event.target.value)}
+                      placeholder="A few lines about yourself and what you hope to contribute."
+                      maxLength={1000}
+                      className="bg-background shadow-none"
+                    />
+                    <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
+                  </div>
+                </>
               ) : null}
 
               <div className="space-y-2">
